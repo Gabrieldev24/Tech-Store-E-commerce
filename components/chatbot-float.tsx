@@ -370,7 +370,7 @@ const handleResetChat = () => {
                     
                     {msg.role === 'bot' && (
                       <Image 
-                        src="/Logo.png" 
+                        src="/logo-blanco.png" 
                         alt="TechBot" 
                         width={32} 
                         height={32}
@@ -437,7 +437,7 @@ const handleResetChat = () => {
                 {isThinking && (
                   <div className="flex gap-3 justify-start items-end animate-in fade-in duration-300">
                     <Image 
-                      src="/Logo.png" 
+                      src="/logo-blanco.png" 
                       alt="TechBot" 
                       width={32} 
                       height={32}
