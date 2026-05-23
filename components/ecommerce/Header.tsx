@@ -56,7 +56,7 @@ export function Header() {
           {/* Logo */}
           <Link href={user?.role === 'admin' ? '/admin/dashboard' : '/'} className="flex items-center gap-2">
             <Image 
-              src="/logo.png" 
+              src="/logo-blanco.png" 
               alt="TechStore" 
               width={32} 
               height={32}
