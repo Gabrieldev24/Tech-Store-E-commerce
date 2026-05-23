@@ -1,0 +1,74 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+
+model Product {
+  id               Int        @id
+  name             String
+  price            Float
+  originalPrice    Float
+  description      String
+  image            String
+  additionalImages Json
+  category         String
+  rating           Float
+  reviews          Int
+  inStock          Boolean
+  stock            Int       
+  specs            String[]
+  cartItems        CartItem[]
+}
+
+model User {
+
+  id Int @id @default(autoincrement())
+  name String
+  email String @unique
+  password String
+  role String @default("CLIENT")
+  createAt DateTime @default(now())
+  cart Cart?
+  resetPasswordToken  String?
+  resetPasswordExpires DateTime?
+
+
+}
+
+model Cart {
+  id        Int        @id @default(autoincrement())
+  
+  // Relación 1 a 1: Un usuario tiene un solo carrito activo
+  userId    Int        @unique 
+  user      User       @relation(fields: [userId], references: [id])
+  
+  items     CartItem[] // Los productos que están adentro
+  
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model CartItem {
+  id        Int      @id @default(autoincrement())
+  quantity  Int      @default(1)
+
+  // Relación: A qué carrito pertenece
+  cartId    Int
+  cart      Cart     @relation(fields: [cartId], references: [id])
+
+  // Relación: Qué producto es
+  productId Int
+  product   Product  @relation(fields: [productId], references: [id])
+}
+
+
