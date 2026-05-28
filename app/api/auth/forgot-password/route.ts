@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/data/postgres';
 import { NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
+import SMTPTransport from 'nodemailer/lib/smtp-transport';
 
 export async function POST(req: Request) {
   try {
@@ -28,12 +29,15 @@ export async function POST(req: Request) {
 
     // 4. Configurar Nodemailer y Enviar el Correo
     const transporter = nodemailer.createTransport({
-      service: 'gmail',
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true,
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASSWORD,
       },
-    });
+      family: 4,
+    } as SMTPTransport.Options); // <-- Añade esto
 
 const mailOptions = {
       from: process.env.EMAIL_USER,
