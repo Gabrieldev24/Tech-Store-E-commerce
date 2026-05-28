@@ -6,9 +6,10 @@ import { Resend } from 'resend';
 
 
 export async function POST(req: Request) {
+  // Le damos un texto falso de respaldo para engañar al build de Next.js
+  const resend = new Resend(process.env.RESEND_API_KEY || 're_dummy_key_para_que_no_explote');
 
-  const resend = new Resend(process.env.RESEND_API_KEY);
-  try { 
+  try {
     const { email } = await req.json();
 
     // 1. Verificar si el usuario existe
