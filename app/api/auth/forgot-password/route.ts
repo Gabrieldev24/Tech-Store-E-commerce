@@ -1,7 +1,9 @@
 import { prisma } from '@/lib/data/postgres';
 import { NextResponse } from 'next/server';
-import nodemailer from 'nodemailer';
-import SMTPTransport from 'nodemailer/lib/smtp-transport';
+import { Resend } from 'resend';
+
+// Inicializamos Resend con la llave de tu .env
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(req: Request) {
   try {
@@ -10,7 +12,6 @@ export async function POST(req: Request) {
     // 1. Verificar si el usuario existe
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
-      // Por seguridad, no decimos que el correo no existe, solo damos un mensaje genérico
       return NextResponse.json({ message: 'Si el correo existe, se enviará un código.' }, { status: 200 });
     }
 
@@ -18,7 +19,7 @@ export async function POST(req: Request) {
     const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
     const expiration = new Date(Date.now() + 15 * 60 * 1000); // 15 minutos
 
-    // 3. Guardar el código en la base de datos (Requiere el Paso 2 de Prisma)
+    // 3. Guardar el código en la base de datos
     await prisma.user.update({
       where: { email },
       data: {
@@ -27,23 +28,11 @@ export async function POST(req: Request) {
       },
     });
 
-    // 4. Configurar Nodemailer y Enviar el Correo
-    const transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 465,
-      secure: true,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD,
-      },
-      family: 4,
-    } as SMTPTransport.Options); // <-- Añade esto
-
-const mailOptions = {
-      from: process.env.EMAIL_USER,
-      to: email,
+    // 4. Enviar el Correo con Resend
+    const { data, error } = await resend.emails.send({
+      from: 'TechStore <onboarding@resend.dev>', // Obligatorio en plan gratis de Resend
+      to: [email],
       subject: 'Código de Recuperación - TechStore',
-      // Usamos 'html' en lugar de 'text' e inyectamos la variable ${resetCode}
       html: `
         <!DOCTYPE html>
         <html lang="es">
@@ -106,9 +95,12 @@ const mailOptions = {
         </body>
         </html>
       `
-    };
+    });
 
-    await transporter.sendMail(mailOptions);
+    if (error) {
+      console.error('Error de Resend:', error);
+      return NextResponse.json({ error: 'Error al enviar el correo' }, { status: 500 });
+    }
 
     return NextResponse.json({ message: 'Código enviado exitosamente.' }, { status: 200 });
 
