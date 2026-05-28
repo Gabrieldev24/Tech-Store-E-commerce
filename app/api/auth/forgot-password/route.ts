@@ -30,7 +30,7 @@ export async function POST(req: Request) {
 
     // 4. Enviar el Correo con Resend
     const { data, error } = await resend.emails.send({
-      from: 'TechStore <onboarding@resend.dev>', // Obligatorio en plan gratis de Resend
+      from: 'TechStore <soporte@cubaaprende.site>', // Obligatorio en plan gratis de Resend
       to: [email],
       subject: 'Código de Recuperación - TechStore',
       html: `
