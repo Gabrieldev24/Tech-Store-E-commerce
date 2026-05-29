@@ -30,7 +30,7 @@ model Product {
   cartItems        CartItem[]
   orderItems       OrderItem[] 
   createdAt        DateTime    @default(now())
-  updatedAt        DateTime    @updatedAt
+  updatedAt DateTime @default(now()) @updatedAt
 }
 
 model User {
