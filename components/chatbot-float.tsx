@@ -416,7 +416,7 @@ const handleResetChat = () => {
                                     
                                     {/* Botón Acción Temu */}
                                     <button 
-                                      onClick={() => router.push(`/product/${card.id}`)}
+                                      onClick={() => router.push(`/product/${card.id}?source=techbot`)}
                                       className="bg-primary text-primary-foreground text-[10px] font-bold px-2 py-1.5 rounded-lg mt-2 w-full hover:bg-primary/90 transition-colors shadow-sm"
                                     >
                                       Ver Producto

@@ -1,7 +1,6 @@
-import { CartRepository } from '../../domain/repositories/cart.repository';
 import { CartDatasource } from '../../domain/datasources/cart.datasource';
-import { CartEntity } from '@/core/domain/entities/CartEntity';
-
+import { CartEntity } from '../../domain/entities/CartEntity';
+import { CartRepository } from '../../domain/repositories/cart.repository';
 
 export class CartRepositoryImpl implements CartRepository {
   constructor(private readonly datasource: CartDatasource) {}
@@ -10,7 +9,8 @@ export class CartRepositoryImpl implements CartRepository {
     return this.datasource.getCart(userId);
   }
 
-  addItemToCart(userId: string, productId: string, quantity: number): Promise<CartEntity> {
-    return this.datasource.addItemToCart(userId, productId, quantity);
+
+  addItemToCart(userId: string, productId: string, quantity: number, source: string): Promise<CartEntity> {
+    return this.datasource.addItemToCart(userId, productId, quantity, source);
   }
 }

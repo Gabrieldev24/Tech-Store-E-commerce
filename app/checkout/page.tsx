@@ -23,6 +23,7 @@ export default function CheckoutPage() {
       router.push('/login');
     }
   }, [user, router]);
+
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -32,9 +33,6 @@ export default function CheckoutPage() {
     city: '',
     state: '',
     zipCode: '',
-    cardNumber: '',
-    cardExpiry: '',
-    cardCVC: '',
   });
 
   const taxRate = 0.1;
@@ -45,67 +43,23 @@ export default function CheckoutPage() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     
-    // Validate card number - only numbers
-    if (name === 'cardNumber') {
-      const numericValue = value.replace(/\D/g, '');
-      if (numericValue.length <= 16) {
-        setFormData(prev => ({ ...prev, [name]: numericValue }));
-      }
-      return;
-    }
-    
-    // Validate expiry date - MM/YY format
-    if (name === 'cardExpiry') {
-      let numericValue = value.replace(/\D/g, '');
-      if (numericValue.length > 4) {
-        numericValue = numericValue.slice(0, 4);
-      }
-      if (numericValue.length >= 2) {
-        const month = numericValue.slice(0, 2);
-        const year = numericValue.slice(2, 4);
-        setFormData(prev => ({ ...prev, [name]: `${month}/${year}` }));
-      } else {
-        setFormData(prev => ({ ...prev, [name]: numericValue }));
-      }
-      return;
-    }
-    
-    // Validate CVC - only numbers
-    if (name === 'cardCVC') {
-      const numericValue = value.replace(/\D/g, '');
-      if (numericValue.length <= 4) {
-        setFormData(prev => ({ ...prev, [name]: numericValue }));
-      }
-      return;
-    }
-
-    // Validate phone - only numbers
-    if (name === 'phone') {
-      const numericValue = value.replace(/\D/g, '');
-      if (numericValue.length <= 15) {
-        setFormData(prev => ({ ...prev, [name]: numericValue }));
-      }
-      return;
-    }
-
-    // Validate zip code - only numbers
-    if (name === 'zipCode') {
-      const numericValue = value.replace(/\D/g, '');
-      if (numericValue.length <= 10) {
-        setFormData(prev => ({ ...prev, [name]: numericValue }));
-      }
-      return;
-    }
-
-    // Validate phone - only numbers and optional + symbol
+    // Validación de teléfono
     if (name === 'phone') {
       let phoneValue = value.replace(/[^\d+]/g, '');
-      // Ensure + is only at the beginning
       if (phoneValue.includes('+')) {
         phoneValue = '+' + phoneValue.replace(/\+/g, '');
       }
       if (phoneValue.length <= 20) {
         setFormData(prev => ({ ...prev, [name]: phoneValue }));
+      }
+      return;
+    }
+
+    // Validación de código postal (solo números)
+    if (name === 'zipCode') {
+      const numericValue = value.replace(/\D/g, '');
+      if (numericValue.length <= 10) {
+        setFormData(prev => ({ ...prev, [name]: numericValue }));
       }
       return;
     }
@@ -116,91 +70,48 @@ export default function CheckoutPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate required fields
-    if (!formData.firstName.trim()) {
-      alert('Por favor ingresa tu nombre');
-      return;
-    }
-    if (!formData.lastName.trim()) {
-      alert('Por favor ingresa tu apellido');
-      return;
-    }
-    if (!formData.email.trim() || !formData.email.includes('@')) {
-      alert('Por favor ingresa un email válido');
-      return;
-    }
-    if (!formData.phone) {
-      alert('Por favor ingresa tu teléfono');
-      return;
-    }
-    if (!formData.address.trim()) {
-      alert('Por favor ingresa tu dirección');
-      return;
-    }
-    if (!formData.city.trim()) {
-      alert('Por favor ingresa tu ciudad');
-      return;
-    }
-    if (!formData.zipCode) {
-      alert('Por favor ingresa tu código postal');
-      return;
-    }
-    
-    // Validate card expiry format
-    if (!formData.cardExpiry.includes('/') || formData.cardExpiry.length !== 5) {
-      alert('Por favor ingresa la fecha de vencimiento en formato MM/YY');
-      return;
-    }
-    
-    // Validate card number
-    if (formData.cardNumber.length !== 16) {
-      alert('Por favor ingresa un número de tarjeta válido (16 dígitos)');
-      return;
-    }
-    
-    // Validate CVC
-    if (formData.cardCVC.length < 3) {
-      alert('Por favor ingresa un CVC válido (3-4 dígitos)');
-      return;
-    }
+    // Validaciones de envío completas
+    if (!formData.firstName.trim()) { alert('Por favor ingresa tu nombre'); return; }
+    if (!formData.lastName.trim()) { alert('Por favor ingresa tu apellido'); return; }
+    if (!formData.email.trim() || !formData.email.includes('@')) { alert('Por favor ingresa un email válido'); return; }
+    if (!formData.phone) { alert('Por favor ingresa tu teléfono'); return; }
+    if (!formData.address.trim()) { alert('Por favor ingresa tu dirección'); return; }
+    if (!formData.city.trim()) { alert('Por favor ingresa tu ciudad'); return; }
+    if (!formData.zipCode) { alert('Por favor ingresa tu código postal'); return; }
     
     setIsProcessing(true);
 
-    // Simulate payment processing
-    await new Promise(resolve => setTimeout(resolve, 2500));
+    try {
+      // 1. Extraemos el 'source' del primer item del carrito (si existe), si no, 'web'
+      const orderSource = items.length > 0 ? (items[0].source || 'web') : 'web';
 
-    // Generate order ID
-    const orderId = `ORD-${Date.now()}`;
+      // 2. Llamamos a nuestra ruta de MercadoPago
+      const response = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items,
+          source: orderSource,
+          userId: user?.id,
+          // Mandamos toda la data de envío para poder guardarla luego en la BD
+          customerData: formData 
+        }),
+      });
 
-    // Store order data in localStorage (frontend only for now)
-    const orderData = {
-      id: orderId,
-      date: new Date().toLocaleDateString(),
-      customer: {
-        name: `${formData.firstName} ${formData.lastName}`,
-        email: formData.email,
-        phone: formData.phone,
-        address: formData.address,
-        city: formData.city,
-        state: formData.state,
-        zipCode: formData.zipCode,
-      },
-      items: items,
-      subtotal: total,
-      tax: tax,
-      shipping: shipping,
-      total: finalTotal,
-    };
-    
-    localStorage.setItem('lastOrder', JSON.stringify(orderData));
+      const data = await response.json();
 
-    // Add order to user's profile
-    if (user) {
-      addOrder(orderId);
+      if (data.url) {
+        // 3. ¡Nos vamos a la bóveda segura de MercadoPago!
+        window.location.href = data.url;
+      } else {
+        alert('Hubo un error al generar el pago. Intenta de nuevo.');
+        setIsProcessing(false);
+      }
+    } catch (error) {
+      console.error('Error procesando el pago:', error);
+      alert('Error de conexión.');
+      setIsProcessing(false);
     }
-
-    clearCart();
-    router.push('/success');
   };
 
   if (items.length === 0) {
@@ -227,21 +138,19 @@ export default function CheckoutPage() {
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
 
-      {/* Page Header */}
       <section className="border-b border-border px-4 py-12 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <h1 className="text-4xl font-bold text-foreground">{t('checkoutTitle')}</h1>
         </div>
       </section>
 
-      {/* Main Content */}
       <div className="flex-1 px-4 py-8 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Checkout Form */}
             <div className="lg:col-span-2">
               <form onSubmit={handleSubmit} className="space-y-8">
-                {/* Shipping Information */}
+                
+                {/* Shipping Information Completita */}
                 <div className="rounded-lg border border-border bg-card p-6">
                   <h2 className="text-xl font-bold text-foreground mb-6">{t('shippingInformation')}</h2>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -350,55 +259,11 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
-                {/* Payment Information */}
-                <div className="rounded-lg border border-border bg-card p-6">
-                  <h2 className="text-xl font-bold text-foreground mb-6">{t('paymentInformation')}</h2>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-foreground mb-2">{t('cardNumber')}</label>
-                      <input
-                        type="text"
-                        name="cardNumber"
-                        required
-                        value={formData.cardNumber}
-                        onChange={handleInputChange}
-                        placeholder="4532 1234 5678 9010"
-                        className="w-full rounded-lg border border-input bg-background px-4 py-2 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                        maxLength={16}
-                        inputMode="numeric"
-                      />
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-foreground mb-2">{t('expiryDate')}</label>
-                        <input
-                          type="text"
-                          name="cardExpiry"
-                          required
-                          value={formData.cardExpiry}
-                          onChange={handleInputChange}
-                          placeholder="05/27"
-                          className="w-full rounded-lg border border-input bg-background px-4 py-2 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                          maxLength={5}
-                          inputMode="numeric"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-foreground mb-2">{t('cvc')}</label>
-                        <input
-                          type="text"
-                          name="cardCVC"
-                          required
-                          value={formData.cardCVC}
-                          onChange={handleInputChange}
-                          placeholder="123"
-                          className="w-full rounded-lg border border-input bg-background px-4 py-2 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                          maxLength={4}
-                          inputMode="numeric"
-                        />
-                      </div>
-                    </div>
-                  </div>
+                {/* Aviso MercadoPago en lugar de tarjeta */}
+                <div className="rounded-lg border border-border bg-card p-6 flex flex-col items-center text-center">
+                  <h2 className="text-xl font-bold text-foreground mb-4">Pago Seguro</h2>
+                  <p className="text-muted-foreground mb-4">Serás redirigido a MercadoPago para completar tu compra de forma segura con Tarjeta, Yape o PagoEfectivo.</p>
+                  <img src="https://logospng.org/download/mercado-pago/logo-mercado-pago-icone-1024.png" alt="MercadoPago" className="h-12 object-contain grayscale opacity-70" />
                 </div>
 
                 {/* Actions */}
@@ -412,16 +277,16 @@ export default function CheckoutPage() {
                   <Button
                     type="submit"
                     disabled={isProcessing}
-                    className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 gap-2"
+                    className="flex-1 bg-blue-500 hover:bg-blue-600 text-white disabled:opacity-50 gap-2"
                   >
                     <Lock className="h-4 w-4" />
-                    {isProcessing ? 'Procesando...' : t('completePurchase')}
+                    {isProcessing ? 'Conectando...' : 'Pagar con MercadoPago'}
                   </Button>
                 </div>
               </form>
             </div>
 
-            {/* Order Summary */}
+            {/* Order Summary (Intacto) */}
             <div className="rounded-lg border border-border bg-muted/50 p-6 h-fit">
               <h2 className="text-xl font-bold text-foreground mb-6">{t('orderSummary')}</h2>
               <div className="space-y-4 mb-6 pb-6 border-b border-border">
@@ -464,7 +329,6 @@ export default function CheckoutPage() {
           </div>
         </div>
       </div>
-
       <Footer />
     </div>
   );

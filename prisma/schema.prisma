@@ -69,6 +69,13 @@ model CartItem {
   // Relación: Qué producto es
   productId Int
   product   Product  @relation(fields: [productId], references: [id])
+  source String @default("web")
 }
 
 
+model Order { // O el nombre que tenga tu tabla de compras
+  id          String   @id @default(uuid())
+  // ... tus otros campos (total, cliente, fecha, etc.)
+
+  source      String   @default("web") 
+}

@@ -4,14 +4,17 @@ import React, { createContext, useContext, useState, useCallback, useEffect } fr
 import { Product } from "@/lib/data/products";
 import { getProductsDB } from "@/lib/data/productsDb"; 
 
+// 1. Añadimos source al tipo de dato del carrito
 export interface CartItem {
   product: Product;
   quantity: number;
+  source: string; 
 }
 
+// 2. Actualizamos la firma de addItem para recibir source
 interface CartContextType {
   items: CartItem[];
-  addItem: (product: Product, quantity: number) => Promise<void>;
+  addItem: (product: Product, quantity: number, source?: string) => Promise<void>;
   removeItem: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
   clearCart: () => void;
@@ -40,7 +43,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           const parsed = JSON.parse(guestCart);
           const mappedItems = parsed.map((item: any) => {
             const product = allProducts.find(p => p.id === item.productId);
-            return { product, quantity: item.quantity };
+            // Recuperamos el source o le ponemos 'web' por defecto
+            return { product, quantity: item.quantity, source: item.source || 'web' };
           }).filter((item: any) => item.product !== undefined);
           setItems(mappedItems);
         } catch (e) {
@@ -57,16 +61,15 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       const response = await fetch('/api/cart', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      
       if (!response.ok) throw new Error('Error al traer el carrito');
       
       const data = await response.json();
-      
       const mappedItems: CartItem[] = data.cart.items.map((cartItem: any) => {
         const product = allProducts.find(p => p.id === cartItem.productId);
-        return { product, quantity: cartItem.quantity };
-      }).filter((item: any) => item.product !== undefined); 
-
+        // Recuperamos el source de la base de datos
+        return { product, quantity: cartItem.quantity, source: cartItem.source || 'web' };
+      }).filter((item: any) => item.product !== undefined);
+      
       setItems(mappedItems);
     } catch (error) {
       console.error(error);
@@ -81,11 +84,15 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   // ======================
   // AUTO-GUARDADO PARA INVITADOS
   // ======================
-  // Si NO hay sesión, cualquier cambio en "items" se guarda en 'guest_cart'
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
-      const guestStorage = items.map(i => ({ productId: i.product.id, quantity: i.quantity }));
+      // Ahora también guardamos el source en el localStorage
+      const guestStorage = items.map(i => ({ 
+        productId: i.product.id, 
+        quantity: i.quantity,
+        source: i.source 
+      }));
       localStorage.setItem('guest_cart', JSON.stringify(guestStorage));
     }
   }, [items]);
@@ -93,17 +100,21 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   // ======================
   // 2. AGREGAR AL CARRITO
   // ======================
-  const addItem = useCallback(async (product: Product, quantity: number) => {
+  // 3. Añadimos source como tercer parámetro, por defecto 'web'
+  const addItem = useCallback(async (product: Product, quantity: number, source: string = 'web') => {
     const token = localStorage.getItem('token');
     
-    // MODO INVITADO: Solo actualizamos la memoria (el useEffect de arriba lo guarda)
+    // MODO INVITADO: Solo actualizamos la memoria
     if (!token) {
       setItems(prev => {
         const existing = prev.find(i => i.product.id === product.id);
         if (existing) {
-          return prev.map(i => i.product.id === product.id ? { ...i, quantity: i.quantity + quantity } : i);
+          return prev.map(i => 
+            i.product.id === product.id ? { ...i, quantity: i.quantity + quantity } : i
+          );
         }
-        return [...prev, { product, quantity }];
+        // Agregamos el item nuevo con su respectivo source
+        return [...prev, { product, quantity, source }];
       });
       return;
     }
@@ -116,10 +127,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ productId: product.id, quantity })
+        // 4. Enviamos el source a tu backend
+        body: JSON.stringify({ productId: product.id, quantity, source })
       });
 
       if (!response.ok) throw new Error('Error al agregar a Postgres');
+      
       await loadCart();
 
     } catch (error) {

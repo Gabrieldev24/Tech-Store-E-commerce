@@ -41,7 +41,8 @@ export async function POST(request: Request) {
     const userId = getUserIdFromToken(request);
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { productId, quantity = 1 } = await request.json();
+    // 1. ¡ATRAPAMOS EL SOURCE AQUÍ! (Le ponemos 'web' por defecto por seguridad)
+    const { productId, quantity = 1, source = 'web' } = await request.json();
 
     if (!productId) {
       return NextResponse.json({ error: 'Product ID is required' }, { status: 400 });
@@ -51,7 +52,8 @@ export async function POST(request: Request) {
     const repository = new CartRepositoryImpl(datasource);
     const addItemUseCase = new AddItemToCart(repository);
 
-    const cart = await addItemUseCase.execute(userId, productId, quantity);
+    // 2. SE LO PASAMOS AL CASO DE USO
+    const cart = await addItemUseCase.execute(userId, productId, quantity, source);
 
     return NextResponse.json({ cart }, { status: 200 });
   } catch (error) {

@@ -9,6 +9,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { Button } from '@/components/ui/button';
 import { Truck, Shield, RotateCcw, ArrowLeft, ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Product } from '@/lib/data/productsDb';
+import { useSearchParams } from 'next/navigation';
 
 interface ProductDetailContentProps {
   product: Product;
@@ -16,6 +17,8 @@ interface ProductDetailContentProps {
 }
 
 export function ProductDetailContent({ product, allProducts }: ProductDetailContentProps) {
+  const searchParams = useSearchParams();
+  const originSource = searchParams.get('source') || 'web'; // Extrae "techbot" si está en la URL
   const { addItem } = useCart();
   const { user } = useAuth();
   const router = useRouter();
@@ -30,7 +33,8 @@ export function ProductDetailContent({ product, allProducts }: ProductDetailCont
     : 0;
 
   const handleAddToCart = () => {
-    addItem(product, quantity);
+    // ENVIAR EL ORIGEN (source) AL CARRITO
+    addItem(product, quantity, originSource);
     setQuantity(1);
   };
 
@@ -39,7 +43,8 @@ export function ProductDetailContent({ product, allProducts }: ProductDetailCont
       router.push('/login');
       return;
     }
-    addItem(product, quantity);
+    // ENVIAR EL ORIGEN (source) AL CARRITO TAMBIÉN EN LA COMPRA DIRECTA
+    addItem(product, quantity, originSource);
     router.push('/checkout');
   };
 

@@ -1,8 +1,6 @@
-
 import { prisma } from '@/lib/data/postgres';
 import { CartDatasource } from '../../domain/datasources/cart.datasource';
 import { CartEntity, CartItemEntity } from '@/core/domain/entities/CartEntity';
-
 
 export class PostgresCartDatasourceImpl implements CartDatasource {
   
@@ -24,6 +22,7 @@ export class PostgresCartDatasourceImpl implements CartDatasource {
     }
 
     // 3. Mapeamos a nuestras entidades limpias
+    // (Nota: Si tu CartItemEntity lo requiere, podrías pasarle el item.source aquí también)
     const items = cart.items.map(item => 
       new CartItemEntity(item.id.toString(), item.productId.toString(), item.quantity)
     );
@@ -31,7 +30,8 @@ export class PostgresCartDatasourceImpl implements CartDatasource {
     return new CartEntity(cart.id.toString(), cart.userId.toString(), items);
   }
 
-  async addItemToCart(userId: string, productId: string, quantity: number): Promise<CartEntity> {
+  // 1. Añadimos source como parámetro
+  async addItemToCart(userId: string, productId: string, quantity: number, source: string): Promise<CartEntity> {
     const userIdInt = parseInt(userId);
     const productIdInt = parseInt(productId);
 
@@ -47,15 +47,23 @@ export class PostgresCartDatasourceImpl implements CartDatasource {
     });
 
     if (existingItem) {
-      // Si ya existe, le sumamos la cantidad (ej. si le da 2 veces a "Agregar")
+      // Si ya existe, le sumamos la cantidad y actualizamos el source
       await prisma.cartItem.update({
         where: { id: existingItem.id },
-        data: { quantity: existingItem.quantity + quantity }
+        data: { 
+          quantity: existingItem.quantity + quantity,
+          source: source // Guardamos la marca de agua
+        }
       });
     } else {
-      // Si no existe, creamos el nuevo item
+      // Si no existe, creamos el nuevo item con su source
       await prisma.cartItem.create({
-        data: { cartId: cart.id, productId: productIdInt, quantity }
+        data: { 
+          cartId: cart.id, 
+          productId: productIdInt, 
+          quantity,
+          source: source // Guardamos la marca de agua
+        }
       });
     }
 
