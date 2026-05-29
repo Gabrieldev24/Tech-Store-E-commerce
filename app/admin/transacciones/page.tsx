@@ -1,7 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { getProductsDB } from '@/lib/data/productsDb';
+import { useMemo, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Download, Filter, Eye, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -9,7 +8,11 @@ import * as XLSX from 'xlsx';
 
 export default function AdminTransaccionesPage() {
   const { toast } = useToast();
-  const products = getProductsDB();
+  
+  // 1. Estados para nuestros datos
+  const [allTransactions, setAllTransactions] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
   const [typeFilter, setTypeFilter] = useState('Todos');
   const [searchQuery, setSearchQuery] = useState('');
   const [startDate, setStartDate] = useState('');
@@ -18,44 +21,70 @@ export default function AdminTransaccionesPage() {
   const [detailsId, setDetailsId] = useState<string | null>(null);
   const itemsPerPage = 10;
 
-  // Create sample transactions from products
-  const allTransactions = useMemo(() => {
-    const trans: any[] = [];
-    
-    products.forEach((product, index) => {
-      // Compra inicial
-      trans.push({
-        id: `COMP-${String(index + 1).padStart(4, '0')}`,
-        date: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        type: 'Compra',
-        concept: `Compra de ${product.name}`,
-        quantity: Math.floor(Math.random() * 20) + 5,
-        unitPrice: product.price * 0.6,
-        total: (product.price * 0.6) * (Math.floor(Math.random() * 20) + 5),
-        supplier: ['Proveedor A', 'Proveedor B', 'Proveedor C'][Math.floor(Math.random() * 3)],
-        status: 'Completado',
-        products: [{ name: product.name, qty: Math.floor(Math.random() * 20) + 5 }]
-      });
+  // 2. Fetch de datos reales
+  useEffect(() => {
+    async function fetchTransactions() {
+      try {
+        const [prodRes, ordRes] = await Promise.all([
+          fetch('/api/products'),
+          fetch('/api/orders')
+        ]);
+        const products = await prodRes.json();
+        const orders = await ordRes.json();
 
-      // Venta
-      if (Math.random() > 0.3) {
-        trans.push({
-          id: `VENTA-${String(index + 1).padStart(4, '0')}`,
-          date: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          type: 'Venta',
-          concept: `Venta de ${product.name}`,
-          quantity: Math.floor(Math.random() * 5) + 1,
-          unitPrice: product.price,
-          total: product.price * (Math.floor(Math.random() * 5) + 1),
-          supplier: `Cliente ${Math.floor(Math.random() * 100)}`,
-          status: 'Completado',
-          products: [{ name: product.name, qty: Math.floor(Math.random() * 5) + 1 }]
+        const transData: any[] = [];
+
+        // A. Convertimos las Órdenes reales en "Ventas"
+        orders.forEach((order: any) => {
+          transData.push({
+            id: `VENTA-${order.id}`,
+            date: order.createdAt ? new Date(order.createdAt).toISOString().split('T')[0] : "Reciente",
+            type: 'Venta',
+            concept: `Venta online (${order.source === 'techbot' ? 'Chatbot' : 'Web'})`,
+            quantity: 1, // Por defecto para la vista rápida
+            unitPrice: Number(order.total),
+            total: Number(order.total),
+            supplier: "Cliente Web",
+            status: order.status || 'Completado',
+            products: [{ name: "Pedido Online", qty: 1 }]
+          });
         });
-      }
-    });
 
-    return trans.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [products]);
+        // B. Generamos "Compras" de stock basándonos en tu inventario real
+        products.forEach((product: any) => {
+          const stock = product.stock || 10;
+          const cost = Number(product.price) * 0.6; // Simulamos que el costo a proveedor fue 40% menor
+          transData.push({
+            id: `COMP-${product.id}`,
+            date: product.createdAt ? new Date(product.createdAt).toISOString().split('T')[0] : "Reciente",
+            type: 'Compra',
+            concept: `Abastecimiento: ${product.name}`,
+            quantity: stock,
+            unitPrice: cost,
+            total: cost * stock,
+            supplier: "Proveedor Principal",
+            status: 'Completado',
+            products: [{ name: product.name, qty: stock }]
+          });
+        });
+
+        // Ordenamos del más reciente al más antiguo
+        transData.sort((a, b) => {
+          if (a.date === "Reciente") return -1;
+          if (b.date === "Reciente") return 1;
+          return new Date(b.date).getTime() - new Date(a.date).getTime();
+        });
+
+        setAllTransactions(transData);
+      } catch (error) {
+        console.error("Error cargando transacciones:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    
+    fetchTransactions();
+  }, []);
 
   // Filter transactions
   const filteredTransactions = useMemo(() => {
@@ -107,12 +136,16 @@ export default function AdminTransaccionesPage() {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Transacciones');
     XLSX.writeFile(wb, `transacciones_${new Date().toISOString().split('T')[0]}.xlsx`);
-    
+
     toast({
       title: 'Éxito',
       description: 'Excel exportado correctamente',
     });
   };
+
+  if (isLoading) {
+    return <div className="flex-1 flex items-center justify-center bg-gray-50"><p className="text-gray-500">Cargando transacciones...</p></div>;
+  }
 
   return (
     <main className="flex-1 overflow-y-auto bg-gray-50">
@@ -126,7 +159,6 @@ export default function AdminTransaccionesPage() {
           </Button>
         </div>
 
-       
         {/* Summary Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6 mb-6">
           <div className="bg-white rounded-lg p-4 sm:p-6 border border-gray-200 shadow-sm">
@@ -224,31 +256,40 @@ export default function AdminTransaccionesPage() {
                     </td>
                   </tr>
                 ))}
+                {paginatedTransactions.length === 0 && (
+                  <tr>
+                    <td colSpan={8} className="px-6 py-8 text-center text-gray-500">
+                      No hay transacciones para mostrar
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
         </div>
 
         {/* Pagination */}
-        <div className="mt-6 flex items-center justify-center gap-2">
-          <Button 
-            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-            disabled={currentPage === 1}
-            variant="outline"
-          >
-            ← Anterior
-          </Button>
-          <span className="text-sm text-gray-600">
-            Página {currentPage} de {Math.max(1, totalPages)}
-          </span>
-          <Button 
-            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-            disabled={currentPage === totalPages || totalPages === 0}
-            variant="outline"
-          >
-            Siguiente →
-          </Button>
-        </div>
+        {totalPages > 1 && (
+          <div className="mt-6 flex items-center justify-center gap-2">
+            <Button 
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+              variant="outline"
+            >
+              ← Anterior
+            </Button>
+            <span className="text-sm text-gray-600">
+              Página {currentPage} de {totalPages}
+            </span>
+            <Button 
+              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              disabled={currentPage === totalPages}
+              variant="outline"
+            >
+              Siguiente →
+            </Button>
+          </div>
+        )}
 
         {/* Details Modal */}
         {detailsId && (

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo,useEffect } from 'react';
 import { getProductsDB } from '@/lib/data/productsDb';
 import { Button } from '@/components/ui/button';
 import { Download, Search, Eye, X } from 'lucide-react';
@@ -14,33 +14,51 @@ export default function AdminInformeVentasPage() {
   const products = getProductsDB();
 
   // Create sample sales from products
-  const sales = useMemo(() => {
-    const salesData: any[] = [];
-    const customers = ['Juan Pérez', 'María García', 'Carlos López', 'Ana Martínez', 'Pedro Rodríguez', 'Laura González', 'Roberto Díaz', 'Sofía López'];
+  // Estados para guardar tus ventas reales
+  const [sales, setSales] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Llamada a tu base de datos al cargar la página
+  useEffect(() => {
+    async function fetchSales() {
+      try {
+        const res = await fetch('/api/orders');
+        const data = await res.json();
+        
+        // Mapeamos los datos de Prisma para que coincidan con lo que espera tu tabla
+        // Mapeamos los datos de Prisma para que coincidan EXACTAMENTE con lo que espera tu tabla HTML
+// Mapeamos los datos de Prisma para que coincidan EXACTAMENTE con lo que espera tu tabla y tu modal
+        const formattedData = data.map((order: any) => {
+          const totalAmount = Number(order.total) || 0;
+          const taxAmount = totalAmount * 0.1; // Calculamos un 10% de impuesto ficticio o el que uses
+          const subtotalAmount = totalAmount - taxAmount; // Calculamos el subtotal
+
+          return {
+            id: order.id,
+            date: order.createdAt ? new Date(order.createdAt).toISOString().split('T')[0] : "Reciente",
+            customer: "Cliente Web", 
+            product: "Pedido Online", 
+            quantity: 1, 
+            unitPrice: subtotalAmount,
+            subtotal: subtotalAmount, // 🔥 ESTA ES LA LÍNEA QUE FALTABA PARA EL MODAL
+            tax: taxAmount, 
+            total: totalAmount,
+            paymentMethod: "MercadoPago",
+            status: order.status || "Completado",
+            source: order.source || "web" 
+          };
+        });
+
+        setSales(formattedData);
+      } catch (error) {
+        console.error("Error trayendo datos de Prisma:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
     
-    products.slice(0, 15).forEach((product, index) => {
-      const quantity = Math.floor(Math.random() * 3) + 1;
-      const subtotal = product.price * quantity;
-      const tax = Math.round(subtotal * 0.1 * 100) / 100;
-      
-      salesData.push({
-        id: `VTA-${String(index + 1).padStart(4, '0')}`,
-        customer: customers[Math.floor(Math.random() * customers.length)],
-        product: product.name,
-        quantity: quantity,
-        unitPrice: product.price,
-        subtotal: subtotal,
-        tax: tax,
-        total: subtotal + tax,
-        date: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        paymentMethod: ['Tarjeta de Crédito', 'Transferencia', 'Efectivo'][Math.floor(Math.random() * 3)],
-        status: 'Completado'
-      });
-    });
-
-    return salesData.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [products]);
-
+    fetchSales();
+  }, []);
   const filteredSales = useMemo(() => {
     return sales.filter(sale => {
       const matchesSearch = sale.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -149,6 +167,7 @@ export default function AdminInformeVentasPage() {
                   <th className="px-3 sm:px-6 py-3 text-xs font-bold text-gray-700 uppercase text-right">Total</th>
                   <th className="px-3 sm:px-6 py-3 text-xs font-bold text-gray-700 uppercase hidden sm:table-cell">Fecha</th>
                   <th className="px-3 sm:px-6 py-3 text-xs font-bold text-gray-700 uppercase text-center">Detalles</th>
+                  <th className="px-6 py-3 text-xs font-bold text-gray-700 uppercase">Canal de Venta</th>
                 </tr>
               </thead>
               <tbody>
@@ -161,6 +180,8 @@ export default function AdminInformeVentasPage() {
                     <td className="px-3 sm:px-6 py-4 text-right text-sm text-gray-900 hidden lg:table-cell">S/ {sale.unitPrice.toFixed(2)}</td>
                     <td className="px-3 sm:px-6 py-4 text-right text-sm font-bold text-gray-900">S/ {sale.total.toFixed(2)}</td>
                     <td className="px-3 sm:px-6 py-4 text-sm text-gray-600 hidden sm:table-cell">{sale.date}</td>
+                    
+                    {/* 8. Celda de Detalles (El botón del ojito) */}
                     <td className="px-3 sm:px-6 py-4 text-center">
                       <button
                         onClick={() => setDetailsId(sale.id)}
@@ -169,6 +190,17 @@ export default function AdminInformeVentasPage() {
                       >
                         <Eye className="h-5 w-5" />
                       </button>
+                    </td>
+
+                    {/* 9. Celda del Canal de Venta (Chatbot / Web) */}
+                    <td className="px-6 py-4 text-center">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        sale.source === 'techbot' 
+                          ? 'bg-purple-100 text-purple-800 border border-purple-200' 
+                          : 'bg-blue-100 text-blue-800' 
+                      }`}>
+                        {sale.source === 'techbot' ? '🤖 Chatbot' : '🌐 Tienda Web'}
+                      </span>
                     </td>
                   </tr>
                 ))}

@@ -66,7 +66,7 @@ export default function AdminProductosPage() {
     setIsModalOpen(true);
   };
 
-  const handleSaveProduct = () => {
+const handleSaveProduct = async () => {
     if (!formData.name || !formData.price || !formData.stock) {
       toast({
         title: 'Error',
@@ -77,43 +77,35 @@ export default function AdminProductosPage() {
     }
 
     if (editingId) {
-      setProducts(products.map(p =>
-        p.id === editingId
-          ? {
-            ...p,
-            name: formData.name,
-            price: parseFloat(formData.price),
-            originalPrice: formData.originalPrice ? parseFloat(formData.originalPrice) : undefined,
-            category: formData.category,
-            stock: parseInt(formData.stock),
-            description: formData.description,
-            image: formData.image
-          }
-          : p
-      ));
-      toast({
-        title: 'Éxito',
-        description: 'Producto actualizado correctamente',
-      });
+      // (Opcional para después) Aquí iría la lógica de editar (PUT)
+      toast({ title: 'Aviso', description: 'Edición en base de datos pendiente de configurar.' });
     } else {
-      const newProduct = {
-        id: `PROD-${Date.now()}`,
-        name: formData.name,
-        price: parseFloat(formData.price),
-        originalPrice: formData.originalPrice ? parseFloat(formData.originalPrice) : undefined,
-        category: formData.category,
-        stock: parseInt(formData.stock),
-        description: formData.description,
-        image: formData.image,
-        rating: 4.5,
-        reviews: 0,
-        inStock: true
-      };
-      setProducts([...products, newProduct]);
-      toast({
-        title: 'Éxito',
-        description: 'Producto añadido correctamente',
-      });
+      // 🔥 CREACIÓN REAL EN LA BASE DE DATOS 🔥
+      try {
+        const res = await fetch('/api/products', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData)
+        });
+
+        if (res.ok) {
+          const productSaved = await res.json();
+          // Agregamos el producto recién guardado a la tabla visualmente
+          setProducts([productSaved, ...products]);
+          toast({
+            title: 'Éxito',
+            description: 'Producto guardado en la base de datos real',
+          });
+        } else {
+          throw new Error("Error al guardar");
+        }
+      } catch (error) {
+        toast({
+          title: 'Error',
+          description: 'No se pudo guardar en la base de datos',
+          variant: 'destructive'
+        });
+      }
     }
     setIsModalOpen(false);
   };

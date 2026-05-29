@@ -8,6 +8,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Lock } from 'lucide-react';
 
@@ -15,6 +16,8 @@ export default function CheckoutPage() {
   const { items, total, clearCart } = useCart();
   const { user, addOrder } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const urlSource = searchParams.get('source') || 'web';
   const { t } = useTranslation();
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -81,9 +84,9 @@ export default function CheckoutPage() {
     
     setIsProcessing(true);
 
-    try {
-      // 1. Extraemos el 'source' del primer item del carrito (si existe), si no, 'web'
-      const orderSource = items.length > 0 ? (items[0].source || 'web') : 'web';
+  try {
+      // 1. Usamos el origen que capturamos de la URL (ej: 'techbot')
+      const orderSource = urlSource;
 
       // 2. Llamamos a nuestra ruta de MercadoPago
       const response = await fetch('/api/checkout', {
@@ -91,9 +94,8 @@ export default function CheckoutPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           items,
-          source: orderSource,
+          source: orderSource, // Aquí viaja la etiqueta
           userId: user?.id,
-          // Mandamos toda la data de envío para poder guardarla luego en la BD
           customerData: formData 
         }),
       });
