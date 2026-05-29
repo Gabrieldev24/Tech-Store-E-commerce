@@ -28,6 +28,7 @@ model Product {
   stock            Int       
   specs            String[]
   cartItems        CartItem[]
+  orderItems       OrderItem[] 
 }
 
 model User {
@@ -41,8 +42,8 @@ model User {
   cart Cart?
   resetPasswordToken  String?
   resetPasswordExpires DateTime?
-
-
+  orders Order[]
+  
 }
 
 model Cart {
@@ -73,9 +74,29 @@ model CartItem {
 }
 
 
-model Order { // O el nombre que tenga tu tabla de compras
-  id          String   @id @default(uuid())
-  // ... tus otros campos (total, cliente, fecha, etc.)
+model Order {
+  id        String      @id @default(uuid())
+  userId    Int
+  total     Float
+  status    String      @default("COMPLETED")
+  createdAt DateTime    @default(now())
+  
+  // ¡Aquí vivirá el rastreador permanentemente!
+  source    String      @default("web")
 
-  source      String   @default("web") 
+  // Relaciones
+  user      User        @relation(fields: [userId], references: [id])
+  items     OrderItem[]
+}
+
+model OrderItem {
+  id        Int      @id @default(autoincrement())
+  orderId   String
+  productId Int
+  quantity  Int
+  price     Float
+
+  // Relaciones
+  order     Order    @relation(fields: [orderId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id])
 }
