@@ -14,13 +14,13 @@ datasource db {
 
 
 model Product {
-  id               Int        @id
+  id               Int         @id
   name             String
   price            Float
   originalPrice    Float
   description      String
   image            String
-  additionalImages Json
+  additionalImages Json?       
   category         String
   rating           Float
   reviews          Int
@@ -30,7 +30,7 @@ model Product {
   cartItems        CartItem[]
   orderItems       OrderItem[] 
   createdAt        DateTime    @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
+  updatedAt        DateTime    @default(now()) @updatedAt
 }
 
 model User {
@@ -58,7 +58,7 @@ model Cart {
   items     CartItem[] // Los productos que están adentro
   
   createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  updatedAt DateTime @default(now()) @updatedAt
 }
 
 model CartItem {

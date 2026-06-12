@@ -244,7 +244,8 @@ const handleResetChat = () => {
     pathname.includes('/login') || 
     pathname.includes('/register')||
     pathname.includes('/forgot-password')||
-    pathname.includes('/profile')
+    pathname.includes('/profile')||
+    pathname.includes('/admin')
 
     
   ) {
