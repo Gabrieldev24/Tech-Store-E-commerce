@@ -8,6 +8,8 @@ import { LanguageProvider } from '@/lib/context/LanguageContext'
 import { ThemeClient } from '@/components/theme-client'
 import './globals.css'
 import { ChatBotFloat } from '@/components/chatbot-float'
+import {GoogleAnalytics} from '@next/third-parties/google'
+
 
 const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
@@ -48,6 +50,7 @@ export default function RootLayout({
           </ThemeClient>
         </LanguageProvider>
         {process.env.NODE_ENV === 'production' && <Analytics />}
+        <GoogleAnalytics gaId="G-QZGYSJ6JXY" />
       </body>
     </html>
   )
