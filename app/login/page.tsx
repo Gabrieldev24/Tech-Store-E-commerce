@@ -43,8 +43,7 @@ const onSubmit = async (data: LoginFormData) => {
       // TRAMPA 1: Ver si llegamos aquí
       console.log("🔥 LOGIN EXITOSO - Intentando enviar evento a Google...");
 
-      sendGAEvent({ 
-        event: 'login', 
+      sendGAEvent('event', 'login', { 
         method: 'credenciales_web' 
       });
 
