@@ -39,13 +39,15 @@ const onSubmit = async (data: LoginFormData) => {
     setError('');
     try {
       await login(data.email, data.password);
-      
 
       // Solo se disparará si el login fue 100% exitoso y no saltó al catch
       sendGAEvent({ 
         event: 'login', 
         method: 'credenciales_web' 
       });
+
+      // TRUCO NINJA: Darle 500 milisegundos a Google para registrar el evento
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       // Redirect based on user role
       const storedUser = localStorage.getItem('currentUser');
