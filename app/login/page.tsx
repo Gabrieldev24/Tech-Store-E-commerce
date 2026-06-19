@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { useAuth } from '@/lib/context/AuthContext';
 import { Header } from '@/components/ecommerce/Header';
 import { Footer } from '@/components/ecommerce/Footer';
+import { sendGAEvent } from '@next/third-parties/google';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -33,11 +34,19 @@ export default function LoginPage() {
     resolver: zodResolver(loginSchema),
   });
 
-  const onSubmit = async (data: LoginFormData) => {
+const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
     setError('');
     try {
       await login(data.email, data.password);
+      
+
+      // Solo se disparará si el login fue 100% exitoso y no saltó al catch
+      sendGAEvent({ 
+        event: 'login', 
+        method: 'credenciales_web' 
+      });
+
       // Redirect based on user role
       const storedUser = localStorage.getItem('currentUser');
       if (storedUser) {
