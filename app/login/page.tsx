@@ -40,10 +40,12 @@ const onSubmit = async (data: LoginFormData) => {
     try {
       await login(data.email, data.password);
 
-      sendGAEvent({ 
-        event: 'login', 
-        method: 'credenciales_web' 
+      sendGAEvent('event', 'login'
+
+        ,{method: 'credenciales_web' 
       });
+      // 🔥 LA SINTAXIS CORRECTA PARA GA4
+
 
       // TRAMPA 2: La pausa obligatoria
       console.log("⏱️ Esperando 1 segundo para que Google atrape el evento...");

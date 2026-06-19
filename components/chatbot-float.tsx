@@ -179,11 +179,6 @@ export function ChatBotFloat() {
       // Usamos el estado actual de 'messages' + el nuevo mensaje que acaba de enviar
       const chatHistory = [...messages, newUserMessage];
 
-      sendGAEvent( 'event','uso_chatbot',
-        {method: 'mensaje_texto'}
-
-      )
-
       // 🔥 4. Llamamos a nuestra API (que conecta con Gemini y Prisma)
       const response = await fetch('/api/chat', {
         method: 'POST',
@@ -198,6 +193,11 @@ export function ChatBotFloat() {
       }
 
       const data = await response.json();
+
+      // Solo le avisamos a Google si Gemini respondió correctamente y no hubo errores
+      sendGAEvent('event', 'uso_chatbot', {
+        method: 'mensaje_texto'
+      });
 
       // 5. Creamos la burbuja con la respuesta real de la IA
       const botResponse: Message = {
