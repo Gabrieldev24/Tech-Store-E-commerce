@@ -40,7 +40,7 @@ const onSubmit = async (data: LoginFormData) => {
     try {
       await login(data.email, data.password);
 
-      sendGAEvent('event', 'login'
+      sendGAEvent('event', 'intento_ingreso_test'
 
         ,{method: 'credenciales_web' 
       });
