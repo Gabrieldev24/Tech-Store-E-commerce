@@ -5,6 +5,7 @@ import { X, Send, Sparkles, Scale, PackageSearch, MessageSquareQuote, Star } fro
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { usePathname,useRouter } from 'next/navigation';
+import { sendGAEvent } from '@next/third-parties/google';
 
 type Message = {
   id: string;
@@ -177,6 +178,11 @@ export function ChatBotFloat() {
       // 🔥 3. Armamos el historial completo para enviarlo al backend
       // Usamos el estado actual de 'messages' + el nuevo mensaje que acaba de enviar
       const chatHistory = [...messages, newUserMessage];
+
+      sendGAEvent( 'event','uso_chatbot',
+        {method: 'mensaje_texto'}
+
+      )
 
       // 🔥 4. Llamamos a nuestra API (que conecta con Gemini y Prisma)
       const response = await fetch('/api/chat', {
