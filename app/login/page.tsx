@@ -39,23 +39,29 @@ const onSubmit = async (data: LoginFormData) => {
     setError('');
     try {
       await login(data.email, data.password);
+      
+      // TRAMPA 1: Ver si llegamos aquí
+      console.log("🔥 LOGIN EXITOSO - Intentando enviar evento a Google...");
 
-      // Solo se disparará si el login fue 100% exitoso y no saltó al catch
       sendGAEvent({ 
         event: 'login', 
         method: 'credenciales_web' 
       });
 
-      // TRUCO NINJA: Darle 500 milisegundos a Google para registrar el evento
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // TRAMPA 2: La pausa obligatoria
+      console.log("⏱️ Esperando 1 segundo para que Google atrape el evento...");
+      await new Promise(resolve => setTimeout(resolve, 1000)); 
 
       // Redirect based on user role
       const storedUser = localStorage.getItem('currentUser');
       if (storedUser) {
         const user = JSON.parse(storedUser);
+        console.log("🚀 Redirigiendo a:", user.role === 'admin' ? '/admin/dashboard' : '/');
         router.push(user.role === 'admin' ? '/admin/dashboard' : '/');
       }
     } catch (err) {
+      // TRAMPA 3: Ver si está fallando en secreto
+      console.error("❌ ERROR EN EL LOGIN:", err);
       setError(err instanceof Error ? err.message : 'Login failed');
     } finally {
       setIsLoading(false);
