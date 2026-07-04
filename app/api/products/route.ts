@@ -43,3 +43,36 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Error al guardar' }, { status: 500 });
   }
 }
+
+export async function PUT(request: Request) {
+  try {
+    const body = await request.json();
+    
+    // Validamos que nos envíen el ID del producto que quieren editar
+    if (!body.id) {
+      return NextResponse.json({ error: 'ID es obligatorio para actualizar' }, { status: 400 });
+    }
+
+    // Actualizamos la fila en la tabla de Postgres
+    const updatedProduct = await prisma.product.update({
+      where: { 
+        id: parseInt(body.id) // Buscamos el producto por su ID
+      },
+      data: {
+        name: body.name,
+        price: parseFloat(body.price),
+        originalPrice: body.originalPrice ? parseFloat(body.originalPrice) : parseFloat(body.price),
+        description: body.description,
+        image: body.image,
+        category: body.category,
+        inStock: parseInt(body.stock) > 0, // Si el stock es mayor a 0, hay disponibilidad
+        stock: parseInt(body.stock),       // Guardamos el nuevo número de stock
+      }
+    });
+
+    return NextResponse.json(updatedProduct);
+  } catch (error) {
+    console.error("Error actualizando producto:", error);
+    return NextResponse.json({ error: 'Error al actualizar' }, { status: 500 });
+  }
+}

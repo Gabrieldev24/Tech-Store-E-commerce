@@ -1,16 +1,18 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { getProductsDB } from '@/lib/data/productsDb';
 import { Button } from '@/components/ui/button';
 import { Search, Plus, Edit, Trash2, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
+
+
 export default function AdminProductosPage() {
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('Todos');
-  const [products, setProducts] = useState(getProductsDB());
+  const [products, setProducts] = useState<any[]>([])
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -24,6 +26,22 @@ export default function AdminProductosPage() {
     description: '',
     image: ''
   });
+
+useEffect(() => {
+  async function fetchProducts() {
+    try {
+      const res = await fetch('/api/products');
+      if (res.ok) {
+        const data = await res.json();
+        setProducts(data);
+      }
+    } catch (error) {
+      console.error("Error trayendo productos de Postgres:", error);
+    }
+  }
+  fetchProducts();
+}, []);
+  
 
   const categories = useMemo(() => {
     const cats = new Set(products.map(p => p.category));
@@ -77,8 +95,33 @@ const handleSaveProduct = async () => {
     }
 
     if (editingId) {
-      // (Opcional para después) Aquí iría la lógica de editar (PUT)
-      toast({ title: 'Aviso', description: 'Edición en base de datos pendiente de configurar.' });
+      // 🔥 EDICIÓN REAL EN LA BASE DE DATOS 🔥
+      try {
+        const res = await fetch(`/api/products`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...formData, id: editingId }) // Enviamos los datos + el ID
+        });
+
+        if (res.ok) {
+          const updatedProduct = await res.json();
+          // Actualizamos la tabla visualmente al instante
+          setProducts(products.map(p => p.id === editingId ? updatedProduct : p));
+          
+          toast({
+            title: 'Éxito',
+            description: 'Producto y stock actualizados correctamente',
+          });
+        } else {
+          throw new Error("Error al actualizar");
+        }
+      } catch (error) {
+        toast({
+          title: 'Error',
+          description: 'No se pudo actualizar en la base de datos',
+          variant: 'destructive'
+        });
+      }
     } else {
       // 🔥 CREACIÓN REAL EN LA BASE DE DATOS 🔥
       try {
