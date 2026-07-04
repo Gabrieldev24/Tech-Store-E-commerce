@@ -87,53 +87,63 @@ export default function Home() {
             </div>
 
             {/* Hero Image */}
-    {/* Hero Image (Carrusel Automático) */}
-          <div className="relative h-96 lg:h-full min-h-96 overflow-hidden rounded-2xl shadow-2xl group border border-border/50">
+    {/* Hero Image (Carrusel con Efecto Glassmorphism Premium) */}
+          <div className="relative w-full aspect-[16/9] lg:aspect-[21/9] overflow-hidden rounded-2xl shadow-2xl group border border-border/10 bg-gray-900">
             
             {/* Contenedor que se desliza */}
             <div 
               className="flex h-full w-full transition-transform duration-700 ease-in-out"
               style={{ transform: `translateX(-${currentSlide * 100}%)` }}
             >
-      {heroSlides.map((slide, index) => (
-                // 🔥 Le agregamos bg-gray-50 o bg-white para que se funda con tu imagen
-                <div key={index} className="h-full w-full flex-shrink-0 relative bg-gray-50 flex items-center justify-center p-2">
+              {heroSlides.map((slide, index) => (
+                <div key={index} className="h-full w-full flex-shrink-0 relative flex items-center justify-center overflow-hidden">
+                  
+                  {/* 🔥 EL TRUCO: Capa 1 (Fondo Desenfocado Dinámico) */}
+                  <div 
+                    className="absolute inset-0 bg-cover bg-center blur-3xl opacity-60 scale-125 saturate-150 transition-all"
+                    style={{ backgroundImage: `url(${slide})` }}
+                  ></div>
+                  
+                  {/* Capa de oscurecimiento sutil para resaltar la imagen principal */}
+                  <div className="absolute inset-0 bg-black/20"></div>
+
+                  {/* 🔥 Capa 2 (La Imagen Principal Intacta) */}
                   <img 
                     src={slide} 
                     alt={`Promoción TechStore ${index + 1}`} 
-                    // 🔥 LA MAGIA: Cambiamos object-cover por object-contain
-                    className="w-full h-full object-contain"
+                    // Usamos object-contain para no recortar NADA, y drop-shadow para separarla del fondo
+                    className="relative z-10 w-full h-full object-contain p-2 sm:p-4 drop-shadow-2xl"
                   />
                 </div>
               ))}
             </div>
 
             {/* Los 3 circulitos de navegación */}
-            <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-3 z-10">
+            <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-3 z-20">
               {heroSlides.map((_, index) => (
                 <button
                   key={index}
                   onClick={() => setCurrentSlide(index)}
-                  className={`h-3 rounded-full transition-all duration-300 shadow-md ${
+                  className={`h-3 rounded-full transition-all duration-300 shadow-lg ${
                     currentSlide === index 
-                      ? 'bg-primary w-8' // El circulito activo se vuelve una "pastilla" de color
-                      : 'bg-white/80 w-3 hover:bg-white' 
+                      ? 'bg-primary w-8' 
+                      : 'bg-white/60 w-3 hover:bg-white' 
                   }`}
                   aria-label={`Ir a la promoción ${index + 1}`}
                 />
               ))}
             </div>
 
-            {/* Flechas laterales (Opcionales, aparecen al pasar el mouse) */}
+            {/* Flechas laterales */}
             <button 
               onClick={() => setCurrentSlide((prev) => (prev === 0 ? heroSlides.length - 1 : prev - 1))}
-              className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/30 hover:bg-white/80 text-black p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm"
+              className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/20 hover:bg-black/50 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all backdrop-blur-md z-20"
             >
               <ChevronLeft className="h-6 w-6" />
             </button>
             <button 
               onClick={() => setCurrentSlide((prev) => (prev + 1) % heroSlides.length)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/30 hover:bg-white/80 text-black p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm"
+              className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/20 hover:bg-black/50 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all backdrop-blur-md z-20"
             >
               <ChevronRight className="h-6 w-6" />
             </button>
