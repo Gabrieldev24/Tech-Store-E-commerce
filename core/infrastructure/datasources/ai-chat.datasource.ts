@@ -17,17 +17,18 @@ export class AiChatDatasourceImpl implements ChatDatasource {
     try {
       // 1. Jalamos los productos de la base de datos de Postgres usando Prisma
       const availableProducts = await prisma.product.findMany({
-        select: { id: true, name: true, price: true, stock: true, category: true,image: true } 
+        select: { id: true, name: true, price: true, stock: true, category: true, image: true } 
       });
 
-      // En lugar de pasar el JSON crudo, lo mapeamos a texto a prueba de tontos:
-// 1. Catálogo súper limpio y directo (sin la palabra ID_EXACTO que la confundía)
-      const catalogoParaLaIA = availableProducts.map(p => 
-        `id: ${p.id} | nombre: ${p.name} | precio: ${p.price} | imagen: ${p.image}`
-      ).join('\n');
+      // 🔥 CORRECCIÓN 1: Manejamos el catálogo vacío e incluimos la variable "stock"
+      const catalogoParaLaIA = availableProducts.length > 0 
+        ? availableProducts.map(p => 
+            `id: ${p.id} | nombre: ${p.name} | precio: ${p.price} | stock: ${p.stock} | imagen: ${p.image}`
+          ).join('\n')
+        : "ESTADO: EL CATÁLOGO ESTÁ COMPLETAMENTE VACÍO. NO HAY PRODUCTOS EN LA BASE DE DATOS.";
 
       // 2. Prompt híbrido: Reglas estrictas + Ejemplo visual infalible
-const systemPrompt = `Eres TechBot, el asistente virtual experto y asesor de ventas de nuestra tienda "Cuba Aprende".
+      const systemPrompt = `Eres TechBot, el asistente virtual experto y asesor de ventas de nuestra tienda "Cuba Aprende".
     
     CATÁLOGO ACTUAL DE PRODUCTOS (CON STOCK Y AGOTADOS):
     ${catalogoParaLaIA}
@@ -40,7 +41,10 @@ const systemPrompt = `Eres TechBot, el asistente virtual experto y asesor de ven
     5. NOMBRES AMIGABLES: Transforma los nombres técnicos a nombres conversacionales y atractivos.
     6. PRECIOS Y MONEDA: NO menciones los precios en el texto hablado a menos que te pregunten directamente. Si lo haces, usa "S/".
     7. CERO MARKDOWN: Está ESTRICTAMENTE PROHIBIDO usar formato Markdown (nada de asteriscos **, ni #, NI LISTAS, NI VIÑETAS). Escribe todo en párrafos normales y usa emojis conversacionales.
-    8. CONOCIMIENTO EXTERNO: SOLO puedes vender o hablar de lo que esté en el catálogo proporcionado.
+    
+    // 🔥 CORRECCIÓN 2: Reforzamos la prohibición de alucinar
+    8. CERO ALUCINACIONES (REGLA VITAL): ESTÁ ESTRICTAMENTE PROHIBIDO inventar productos, marcas o stock que no existan explícitamente en el CATÁLOGO proporcionado arriba. Si el catálogo dice "VACÍO", debes disculparte y decirle al usuario que la tienda no tiene productos disponibles en este momento.
+    
     9. TARJETAS DE PRODUCTO (VITAL): Cuando vayas a recomendar un producto (Y TENGA STOCK MAYOR A 0), DEBES incluir obligatoriamente al final de tu mensaje la tarjeta usando ESTE FORMATO EXACTO: [TARJETA | id | nombre | precio | imagen]. 
     ESTÁ ESTRICTAMENTE PROHIBIDO listar las características del producto como texto normal (ejemplo prohibido: "Precio: 50 S/, Imagen: url"). El "id" debe ser el número EXACTO que aparece en el catálogo.
     10. ENLACE DE PAGO (VITAL): Si el usuario indica que quiere comprar, pagar o finalizar su pedido, DEBES enviarle este enlace exacto: https://cubaaprende.site/checkout?source=techbot
