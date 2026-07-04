@@ -15,13 +15,16 @@ export interface CartItem {
 interface CartContextType {
   items: CartItem[];
   addItem: (product: Product, quantity: number, source?: string) => Promise<void>;
-  removeItem: (productId: string) => void;
+  removeItem: (productId: string) => Promise<void>; // 🔥 Agregamos esta línea para que TypeScript no llore
   updateQuantity: (productId: string, quantity: number) => void;
   clearCart: () => void;
   total: number;
   itemCount: number;
   loadCart: () => Promise<void>;
 }
+
+
+
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
@@ -143,19 +146,71 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   // ======================
   // FUNCIONES LOCALES 
   // ======================
-  const removeItem = useCallback((productId: string) => {
-    setItems((prevItems) => prevItems.filter((item) => item.product.id !== productId));
-  }, []);
+const removeItem = useCallback(async (productId: string) => {
+    const token = localStorage.getItem('token');
 
-  const updateQuantity = useCallback((productId: string, quantity: number) => {
+    // 1. ACTUALIZACIÓN OPTIMISTA: Lo borramos de la pantalla al instante (cero lag)
+    setItems((prevItems) => prevItems.filter((item) => item.product.id !== productId));
+
+    // 2. MODO INVITADO: Si no hay token, el useEffect de auto-guardado 
+    // ya se encarga de actualizar el localStorage, así que cortamos aquí.
+    if (!token) return;
+
+    // 3. MODO AUTENTICADO: Le disparamos la orden a Postgres
+    try {
+      const response = await fetch(`/api/cart?productId=${productId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) throw new Error('Error al borrar en Postgres');
+
+    } catch (error) {
+      console.error("Error al sincronizar el borrado con Postgres:", error);
+      // 4. ROLLBACK: Si se cae el internet o falla el servidor, le devolvemos 
+      // el producto a la pantalla recargando la verdad absoluta desde la BD.
+      await loadCart();
+    }
+  }, [loadCart]);
+
+const updateQuantity = useCallback(async (productId: string, quantity: number) => {
+    // Si baja a 0 o menos, usamos la función de eliminar
     if (quantity <= 0) {
-      removeItem(productId);
+      await removeItem(productId);
       return;
     }
+
+    // 1. ACTUALIZACIÓN OPTIMISTA: Cambiamos la pantalla al instante sin lag
     setItems((prevItems) =>
       prevItems.map((item) => item.product.id === productId ? { ...item, quantity } : item)
     );
-  }, [removeItem]);
+
+    const token = localStorage.getItem('token');
+    
+    // 2. MODO INVITADO: El useEffect guarda esto automáticamente
+    if (!token) return;
+
+    // 3. MODO AUTENTICADO: Avisamos a nuestra API
+    try {
+      const response = await fetch(`/api/cart`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ productId, quantity })
+      });
+
+      if (!response.ok) throw new Error('Error al actualizar cantidad en servidor');
+
+    } catch (error) {
+      console.error("Error de sincronización con Postgres:", error);
+      // 4. ROLLBACK: Si el internet falla, devolvemos la cantidad real desde la BD
+      await loadCart();
+    }
+  }, [removeItem, loadCart]);
 
   const clearCart = useCallback(() => {
     setItems([]);

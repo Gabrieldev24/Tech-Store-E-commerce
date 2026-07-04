@@ -133,7 +133,7 @@ export default function Home() {
               </p>
             </div>
             <Button 
-              onClick={() => router.push('/products')}
+              onClick={() => router.push('/')}
               className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
               {t('viewAllProducts')}

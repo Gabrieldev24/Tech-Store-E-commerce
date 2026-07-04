@@ -60,3 +60,61 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
+
+
+// ==========================================
+// PUT: Actualizar la cantidad de un producto
+// ==========================================
+export async function PUT(request: Request) {
+  try {
+    const userId = getUserIdFromToken(request);
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    // 1. Recibimos los datos que mandó la "Actualización Optimista" del Frontend
+    const { productId, quantity } = await request.json();
+
+    if (!productId || quantity === undefined) {
+      return NextResponse.json({ error: 'Product ID y quantity son obligatorios' }, { status: 400 });
+    }
+
+    // 2. Instanciamos tu datasource de Postgres
+    const datasource = new PostgresCartDatasourceImpl();
+    
+    // 3. Ejecutamos el método que creamos en el Paso 2
+    const cart = await datasource.updateItemQuantity(userId, productId.toString(), quantity);
+
+    return NextResponse.json({ cart }, { status: 200 });
+  } catch (error) {
+    console.error("Error en PUT /api/cart:", error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
+}
+
+// ==========================================
+// DELETE: Eliminar un producto del carrito (El basurero)
+// ==========================================
+export async function DELETE(request: Request) {
+  try {
+    const userId = getUserIdFromToken(request);
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    // 1. Extraemos el productId de la URL (ej: /api/cart?productId=123)
+    const { searchParams } = new URL(request.url);
+    const productId = searchParams.get('productId');
+
+    if (!productId) {
+      return NextResponse.json({ error: 'Product ID es obligatorio' }, { status: 400 });
+    }
+
+    // 2. Instanciamos tu datasource
+    const datasource = new PostgresCartDatasourceImpl();
+    
+    // 3. Ejecutamos el método para eliminar que hicimos hace un rato
+    const cart = await datasource.removeItemFromCart(userId, productId);
+
+    return NextResponse.json({ cart }, { status: 200 });
+  } catch (error) {
+    console.error("Error en DELETE /api/cart:", error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
+}

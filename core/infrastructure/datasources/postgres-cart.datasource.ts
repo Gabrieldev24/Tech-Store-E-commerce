@@ -70,4 +70,61 @@ export class PostgresCartDatasourceImpl implements CartDatasource {
     // 3. Retornamos el carrito actualizado
     return this.getCart(userId);
   }
+  // 3. Método para eliminar un producto del carrito
+  async removeItemFromCart(userId: string, productId: string): Promise<CartEntity> {
+    const userIdInt = parseInt(userId);
+    const productIdInt = parseInt(productId);
+
+    // 1. Buscamos el carrito del usuario
+    const cart = await prisma.cart.findUnique({ 
+      where: { userId: userIdInt } 
+    });
+
+    // Si por alguna razón no hay carrito, simplemente retornamos el estado actual (vacío)
+    if (!cart) {
+      return this.getCart(userId);
+    }
+
+    // 2. Eliminamos el producto específico de ese carrito
+    // Usamos deleteMany porque es la forma más limpia de borrar coincidiendo dos columnas (cartId y productId) sin depender del ID único del CartItem
+    await prisma.cartItem.deleteMany({
+      where: {
+        cartId: cart.id,
+        productId: productIdInt
+      }
+    });
+
+    // 3. Retornamos el carrito actualizado consultando nuevamente a la base de datos
+    return this.getCart(userId);
+  }
+
+  async updateItemQuantity(userId: string, productId: string, quantity: number): Promise<CartEntity> {
+    const userIdInt = parseInt(userId);
+    const productIdInt = parseInt(productId);
+
+    // 1. Buscamos el carrito del usuario
+    const cart = await prisma.cart.findUnique({ 
+      where: { userId: userIdInt } 
+    });
+
+    if (!cart) return this.getCart(userId); // Si no hay carrito, devolvemos el actual
+
+    // 2. Buscamos el item específico que queremos modificar
+    const existingItem = await prisma.cartItem.findFirst({
+      where: { cartId: cart.id, productId: productIdInt }
+    });
+
+    // 3. Si el item existe, actualizamos su cantidad
+    if (existingItem) {
+      await prisma.cartItem.update({
+        where: { id: existingItem.id },
+        data: { quantity: quantity } // Reemplazamos la cantidad vieja por la nueva
+      });
+    }
+
+    // 4. Retornamos el carrito con los nuevos totales
+    return this.getCart(userId);
+  }
+
+
 }
