@@ -23,6 +23,19 @@ export default function Home() {
   const [currentPage, setCurrentPage] = useState(1);
   const products = getProductsDB();
 
+  // --- INICIO CÓDIGO DEL CARRUSEL ---
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const heroSlides = ['/1.jpg', '/2.jpg', '/3.jpg']; // Tus 3 imágenes en la carpeta public
+
+  // Efecto para que las imágenes pasen solas cada 5 segundos
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
+  // --- FIN CÓDIGO DEL CARRUSEL ---
+
   // Redirect admin to dashboard
   useEffect(() => {
     if (user?.role === 'admin') {
@@ -74,15 +87,58 @@ export default function Home() {
             </div>
 
             {/* Hero Image */}
-            <div className="relative h-96 lg:h-full min-h-96">
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-accent/20 rounded-2xl blur-3xl"></div>
-              <div className="relative h-full flex items-center justify-center rounded-2xl border border-primary/10 bg-gradient-to-br from-primary/5 to-accent/5 p-8">
-                <div className="text-center">
-                  <div className="text-6xl mb-4">🛍️</div>
-                  <p className="text-muted-foreground">Compra Productos Tecnológicos Premium</p>
+    {/* Hero Image (Carrusel Automático) */}
+          <div className="relative h-96 lg:h-full min-h-96 overflow-hidden rounded-2xl shadow-2xl group border border-border/50">
+            
+            {/* Contenedor que se desliza */}
+            <div 
+              className="flex h-full w-full transition-transform duration-700 ease-in-out"
+              style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+            >
+              {heroSlides.map((slide, index) => (
+                <div key={index} className="h-full w-full flex-shrink-0 relative">
+                  <img 
+                    src={slide} 
+                    alt={`Promoción TechStore ${index + 1}`} 
+                    className="h-full w-full object-cover object-center"
+                  />
+                  {/* Capa oscura sutil para que resalte más si es necesario */}
+                  <div className="absolute inset-0 bg-black/5 pointer-events-none"></div>
                 </div>
-              </div>
+              ))}
             </div>
+
+            {/* Los 3 circulitos de navegación */}
+            <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-3 z-10">
+              {heroSlides.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentSlide(index)}
+                  className={`h-3 rounded-full transition-all duration-300 shadow-md ${
+                    currentSlide === index 
+                      ? 'bg-primary w-8' // El circulito activo se vuelve una "pastilla" de color
+                      : 'bg-white/80 w-3 hover:bg-white' 
+                  }`}
+                  aria-label={`Ir a la promoción ${index + 1}`}
+                />
+              ))}
+            </div>
+
+            {/* Flechas laterales (Opcionales, aparecen al pasar el mouse) */}
+            <button 
+              onClick={() => setCurrentSlide((prev) => (prev === 0 ? heroSlides.length - 1 : prev - 1))}
+              className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/30 hover:bg-white/80 text-black p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm"
+            >
+              <ChevronLeft className="h-6 w-6" />
+            </button>
+            <button 
+              onClick={() => setCurrentSlide((prev) => (prev + 1) % heroSlides.length)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/30 hover:bg-white/80 text-black p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm"
+            >
+              <ChevronRight className="h-6 w-6" />
+            </button>
+
+          </div>
           </div>
         </div>
       </section>
