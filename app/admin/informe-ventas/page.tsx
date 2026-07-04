@@ -154,44 +154,59 @@ const totals = useMemo(() => {
         </div>
 
         {/* Gráfica de Rendimiento de Canales (Web vs Bot) */}
+        {/* Gráfico Circular de Rendimiento (Web vs Bot) */}
         {totals.count > 0 && (
-          <div className="bg-white rounded-lg p-4 sm:p-6 border border-gray-200 shadow-sm mb-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Rendimiento por Canal de Venta</h3>
+          <div className="bg-white rounded-lg p-6 sm:p-8 border border-gray-200 shadow-sm mb-6 flex flex-col sm:flex-row items-center gap-8 lg:gap-12 justify-center">
             
-            <div className="flex items-center justify-between text-sm mb-2">
-              <span className="font-semibold text-blue-700 flex items-center gap-1">
-                🌐 Tienda Web ({totals.webPercentage}%)
-              </span>
-              <span className="font-semibold text-purple-700 flex items-center gap-1">
-                🤖 Chatbot ({totals.botPercentage}%)
-              </span>
-            </div>
-            
-            {/* La barra gráfica creada con Tailwind */}
-            <div className="w-full h-8 bg-gray-100 rounded-full overflow-hidden flex shadow-inner">
-              <div
-                className="bg-blue-500 h-full flex items-center justify-center text-xs text-white font-bold transition-all duration-1000"
-                style={{ width: `${totals.webPercentage}%` }}
-                title={`Ventas Web: ${totals.webSales}`}
-              >
-                {totals.webPercentage > 10 ? `${totals.webSales}` : ''}
-              </div>
-              <div
-                className="bg-purple-500 h-full flex items-center justify-center text-xs text-white font-bold transition-all duration-1000"
-                style={{ width: `${totals.botPercentage}%` }}
-                title={`Ventas Chatbot: ${totals.botSales}`}
-              >
-                {totals.botPercentage > 10 ? `${totals.botSales}` : ''}
+            {/* El Donut Chart con CSS Mágico */}
+            <div className="relative flex-shrink-0 w-48 h-48 rounded-full flex items-center justify-center shadow-md"
+                 style={{ 
+                   background: `conic-gradient(#8b5cf6 0deg ${totals.botPercentage}%, #3b82f6 ${totals.botPercentage}% 100%)` 
+                 }}>
+              {/* Hueco del centro para el estilo Donut */}
+              <div className="absolute w-32 h-32 bg-white rounded-full flex flex-col items-center justify-center shadow-inner">
+                <span className="text-3xl font-black text-gray-800">{totals.count}</span>
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Ventas</span>
               </div>
             </div>
-            
-            <div className="flex justify-between text-xs text-gray-500 mt-3">
-              <span>{totals.webSales} transacciones directas</span>
-              <span>{totals.botSales} transacciones asistidas</span>
+
+            {/* Leyenda Profesional */}
+            <div className="flex-1 w-full max-w-md space-y-5">
+              <h3 className="text-xl font-bold text-gray-900 border-b border-gray-100 pb-3">Atribución de Ventas</h3>
+
+              {/* Fila Web */}
+              <div className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className="w-5 h-5 rounded-full bg-blue-500 shadow-sm border-2 border-white ring-1 ring-gray-200"></div>
+                  <div>
+                    <span className="font-bold text-gray-800 block">🌐 Tienda Web</span>
+                    <span className="text-xs text-gray-500 font-medium">Búsqueda orgánica</span>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="font-black text-xl text-blue-600 block">{totals.webPercentage}%</span>
+                  <span className="text-xs font-bold text-gray-400">{totals.webSales} transacciones</span>
+                </div>
+              </div>
+
+              {/* Fila Bot */}
+              <div className="flex items-center justify-between p-3 rounded-lg hover:bg-purple-50 transition-colors border border-transparent hover:border-purple-100">
+                <div className="flex items-center gap-3">
+                  <div className="w-5 h-5 rounded-full bg-purple-500 shadow-sm border-2 border-white ring-1 ring-gray-200"></div>
+                  <div>
+                    <span className="font-bold text-purple-900 block">🤖 Chatbot TechBot</span>
+                    <span className="text-xs text-purple-500 font-medium">Ventas asistidas por IA</span>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="font-black text-xl text-purple-600 block">{totals.botPercentage}%</span>
+                  <span className="text-xs font-bold text-purple-400">{totals.botSales} transacciones</span>
+                </div>
+              </div>
             </div>
+            
           </div>
         )}
-
 
 
 
