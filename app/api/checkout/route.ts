@@ -30,6 +30,21 @@ export async function POST(request: Request) {
       }
     });
 
+    // 3.5 🔥 ¡VACIAR EL CARRITO EN POSTGRES!
+    if (userId) {
+      try {
+        await prisma.cartItem.deleteMany({
+          where: {
+            cart: {
+              userId: parseInt(userId)
+            }
+          }
+        });
+      } catch (e) {
+        console.error("Error al vaciar el carrito en BD:", e);
+      }
+    }
+
     // 4. PREPARAR DATOS PARA MERCADOPAGO
     const mpItems = items.map((item: any) => ({
       id: item.product.id.toString(),
