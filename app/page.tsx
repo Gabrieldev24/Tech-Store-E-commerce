@@ -87,8 +87,8 @@ export default function Home() {
             </div>
 
             {/* Hero Image */}
-    {/* Hero Image (Carrusel Gigante Premium con Glassmorphism) */}
-          <div className="relative w-full h-[450px] lg:h-[600px] overflow-hidden rounded-2xl shadow-2xl group border border-border/10 bg-gray-900">
+    {/* Hero Image (Carrusel Panorámico Exacto 1600x880) */}
+          <div className="relative w-full max-w-[1600px] mx-auto aspect-[1600/880] overflow-hidden rounded-2xl shadow-2xl group border border-border/10 bg-gray-50">
             
             {/* Contenedor que se desliza */}
             <div 
@@ -96,38 +96,29 @@ export default function Home() {
               style={{ transform: `translateX(-${currentSlide * 100}%)` }}
             >
               {heroSlides.map((slide, index) => (
-                <div key={index} className="h-full w-full flex-shrink-0 relative flex items-center justify-center overflow-hidden">
-                  
-                  {/* 🔥 Capa 1: Fondo Desenfocado Gigante (Llena el contenedor) */}
-                  <div 
-                    className="absolute inset-0 bg-cover bg-center blur-3xl opacity-50 scale-150 saturate-200 transition-all"
-                    style={{ backgroundImage: `url(${slide})` }}
-                  ></div>
-                  
-                  {/* Oscurecimiento para que tu imagen resalte más */}
-                  <div className="absolute inset-0 bg-black/20"></div>
-
-                  {/* 🔥 Capa 2: Tu imagen 1:1 Flotando en el centro */}
+                <div key={index} className="h-full w-full flex-shrink-0 relative">
                   <img 
                     src={slide} 
                     alt={`Promoción TechStore ${index + 1}`} 
-                    // object-contain asegura que la imagen cuadrada se vea completa, y hover:scale le da un toque 3D
-                    className="relative z-10 w-full h-full object-contain p-4 sm:p-8 drop-shadow-2xl hover:scale-105 transition-transform duration-700"
+                    // 🔥 object-cover encajará perfecto porque el contenedor es de la misma forma que tu imagen
+                    className="w-full h-full object-cover object-center"
                   />
+                  {/* Capa oscura sutil (opcional, para que los circulitos blancos resalten) */}
+                  <div className="absolute inset-0 bg-black/5 pointer-events-none"></div>
                 </div>
               ))}
             </div>
 
             {/* Los 3 circulitos de navegación */}
-            <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-3 z-20">
+            <div className="absolute bottom-4 sm:bottom-6 left-0 right-0 flex justify-center gap-3 z-10">
               {heroSlides.map((_, index) => (
                 <button
                   key={index}
                   onClick={() => setCurrentSlide(index)}
-                  className={`h-3 rounded-full transition-all duration-300 shadow-lg ${
+                  className={`h-2 sm:h-3 rounded-full transition-all duration-300 shadow-md ${
                     currentSlide === index 
-                      ? 'bg-primary w-10' 
-                      : 'bg-white/60 w-3 hover:bg-white' 
+                      ? 'bg-primary w-8 sm:w-10' 
+                      : 'bg-white/80 w-2 sm:w-3 hover:bg-white' 
                   }`}
                   aria-label={`Ir a la promoción ${index + 1}`}
                 />
@@ -137,15 +128,15 @@ export default function Home() {
             {/* Flechas laterales */}
             <button 
               onClick={() => setCurrentSlide((prev) => (prev === 0 ? heroSlides.length - 1 : prev - 1))}
-              className="absolute left-6 top-1/2 -translate-y-1/2 bg-black/20 hover:bg-black/60 text-white p-3 rounded-full opacity-0 group-hover:opacity-100 transition-all backdrop-blur-md z-20"
+              className="absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 bg-white/30 hover:bg-white/80 text-black p-2 sm:p-3 rounded-full opacity-0 group-hover:opacity-100 transition-all backdrop-blur-sm z-20"
             >
-              <ChevronLeft className="h-6 w-6" />
+              <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
             </button>
             <button 
               onClick={() => setCurrentSlide((prev) => (prev + 1) % heroSlides.length)}
-              className="absolute right-6 top-1/2 -translate-y-1/2 bg-black/20 hover:bg-black/60 text-white p-3 rounded-full opacity-0 group-hover:opacity-100 transition-all backdrop-blur-md z-20"
+              className="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 bg-white/30 hover:bg-white/80 text-black p-2 sm:p-3 rounded-full opacity-0 group-hover:opacity-100 transition-all backdrop-blur-sm z-20"
             >
-              <ChevronRight className="h-6 w-6" />
+              <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
             </button>
 
           </div>
