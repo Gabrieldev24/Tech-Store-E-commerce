@@ -124,7 +124,7 @@ export default function CheckoutPage() {
           <div className="text-center">
             <h1 className="text-2xl font-bold text-foreground mb-4">Tu carrito está vacío</h1>
             <p className="text-muted-foreground mb-8">Agrega artículos a tu carrito para proceder con el pago.</p>
-            <Link href="/products">
+            <Link href="/">
               <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
                 Continuar Comprando
               </Button>
