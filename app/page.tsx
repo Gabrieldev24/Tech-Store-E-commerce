@@ -95,7 +95,7 @@ export default function Home() {
               className="flex h-full w-full transition-transform duration-700 ease-in-out"
               style={{ transform: `translateX(-${currentSlide * 100}%)` }}
             >
-              {heroSlides.map((slide, index) => (
+            {heroSlides.map((slide, index) => (
                 <div key={index} className="h-full w-full flex-shrink-0 relative">
                   <img 
                     src={slide} 
