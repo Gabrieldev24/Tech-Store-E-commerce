@@ -95,15 +95,15 @@ export default function Home() {
               className="flex h-full w-full transition-transform duration-700 ease-in-out"
               style={{ transform: `translateX(-${currentSlide * 100}%)` }}
             >
-            {heroSlides.map((slide, index) => (
-                <div key={index} className="h-full w-full flex-shrink-0 relative">
+        {heroSlides.map((slide, index) => (
+                // 🔥 Le agregamos bg-gray-50 o bg-white para que se funda con tu imagen
+                <div key={index} className="h-full w-full flex-shrink-0 relative bg-gray-50 flex items-center justify-center p-2">
                   <img 
                     src={slide} 
                     alt={`Promoción TechStore ${index + 1}`} 
-                    className="h-full w-full object-cover object-center"
+                    // 🔥 LA MAGIA: Cambiamos object-cover por object-contain
+                    className="w-full h-full object-contain"
                   />
-                  {/* Capa oscura sutil para que resalte más si es necesario */}
-                  <div className="absolute inset-0 bg-black/5 pointer-events-none"></div>
                 </div>
               ))}
             </div>
