@@ -38,7 +38,7 @@ export default function CartPage() {
               <p className="text-muted-foreground mb-8">
                 Agrega algunos productos para comenzar con tu pedido.
               </p>
-              <Link href="/products">
+              <Link href="/">
                 <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90">
                   <ArrowLeft className="mr-2 h-4 w-4" />
                   {t('continueShopping')}
@@ -142,7 +142,7 @@ export default function CartPage() {
                     {t('proceedToCheckout')}
                   </Button>
                 </Link>
-                <Link href="/products" className="w-full block">
+                <Link href="/" className="w-full block">
                   <Button size="lg" variant="outline" className="w-full">
                     {t('continueShopping')}
                   </Button>

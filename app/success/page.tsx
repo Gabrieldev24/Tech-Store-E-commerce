@@ -178,7 +178,7 @@ export default function SuccessPage() {
                   {t('continueShopping')}
                 </Button>
               </Link>
-              <Link href="/products" className="flex-1">
+              <Link href="/" className="flex-1">
                 <Button size="lg" variant="outline" className="w-full">
                   {t('viewAllProducts')}
                 </Button>
