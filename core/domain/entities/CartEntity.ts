@@ -4,6 +4,7 @@ export class CartItemEntity {
     public id: string,
     public productId: string,
     public quantity: number,
+    public source: string = 'web'
   ) {}
 }
 

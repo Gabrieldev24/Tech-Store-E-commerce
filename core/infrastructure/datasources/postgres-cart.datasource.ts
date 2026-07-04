@@ -24,7 +24,12 @@ export class PostgresCartDatasourceImpl implements CartDatasource {
     // 3. Mapeamos a nuestras entidades limpias
     // (Nota: Si tu CartItemEntity lo requiere, podrías pasarle el item.source aquí también)
     const items = cart.items.map(item => 
-      new CartItemEntity(item.id.toString(), item.productId.toString(), item.quantity)
+      new CartItemEntity(item.id.toString(),
+       item.productId.toString(),
+       item.quantity,
+       item.source
+      
+      )
     );
 
     return new CartEntity(cart.id.toString(), cart.userId.toString(), items);
