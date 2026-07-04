@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { MercadoPagoConfig, Preference } from 'mercadopago';
+// 🔥 VITAL: Importamos Prisma para poder guardar en tu base de datos
+import { prisma } from '@/lib/data/postgres'; 
 
-// 1. Inicializamos MercadoPago con tu token seguro
 const client = new MercadoPagoConfig({
   accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN!,
 });
@@ -9,54 +10,65 @@ const client = new MercadoPagoConfig({
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    // Recibimos los items del carrito, origen y cliente
-    const { items, source, userId, customerData } = body;
+    const { items, userId, customerData } = body;
 
-    // 2. Formateamos tus productos exactamente como MercadoPago los exige
+    // 1. DETECTAR EL CANAL DE VENTA REAL DESDE EL CARRITO
+    // Si al menos un producto del carrito vino del chatbot, le damos el crédito al bot
+    const isFromBot = items.some((item: any) => item.source === 'techbot');
+    const finalSource = isFromBot ? 'techbot' : 'web';
+
+    // 2. CALCULAR EL TOTAL MATEMÁTICAMENTE
+    const total = items.reduce((sum: number, item: any) => sum + (item.product.price * item.quantity), 0);
+
+    // 3. ¡REGISTRAR LA ORDEN EN POSTGRES PRIMERO!
+    const newOrder = await prisma.order.create({
+      data: {
+        userId: userId ? parseInt(userId) : 1, // Asegúrate de manejar usuarios anónimos si es necesario
+        total: total,
+        status: 'PENDING',
+        source: finalSource, // 🔥 AQUÍ SE GUARDA 'techbot' o 'web' DIRECTO A TU BD
+      }
+    });
+
+    // 4. PREPARAR DATOS PARA MERCADOPAGO
     const mpItems = items.map((item: any) => ({
       id: item.product.id.toString(),
       title: item.product.name,
       quantity: item.quantity,
       unit_price: Number(item.product.price),
-      currency_id: 'PEN', // Soles peruanos
+      currency_id: 'PEN', 
     }));
 
-    // 3. Creamos la "Preferencia de pago"
     const preference = new Preference(client);
-
-    // Forzamos tu dominio oficial como red de seguridad para evitar el error 400
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://cubaaprende.site';
 
+    // 5. CREAR LA PREFERENCIA DE PAGO
     const result = await preference.create({
       body: {
         items: mpItems,
-        // Envolvemos la información de tu comprador si la necesitas luego
         payer: {
           name: customerData?.firstName || 'Guest',
           surname: customerData?.lastName || '',
           email: customerData?.email || 'guest@cubaaprende.site',
         },
-        // ¡LA MAGIA! Aquí escondemos el origen de la venta y el ID
+        external_reference: newOrder.id.toString(), // 🔥 Conectamos el pago con el ID de Postgres
         metadata: {
-          source: source || 'web',
-          user_id: userId || 'guest', // MercadoPago prefiere snake_case
+          source: finalSource,
+          order_id: newOrder.id.toString(),
         },
-        // A dónde regresa el cliente después de pagar en MercadoPago
         back_urls: {
           success: `${baseUrl}/success`,
-          failure: `${baseUrl}/cart`, // Si falla, lo devolvemos al carrito
+          failure: `${baseUrl}/cart`,
           pending: `${baseUrl}/cart`,
         },
         auto_return: 'approved',
       }
     });
 
-    // 4. Devolvemos la URL del Checkout Pro al frontend
     return NextResponse.json({ url: result.init_point }, { status: 200 });
 
   } catch (error: any) {
-    // Imprimimos el error exacto en los logs de Railway para mayor control
-    console.error('Error detallado en MercadoPago:', error.cause || error.message || error);
+    console.error('Error detallado en el Checkout:', error);
     return NextResponse.json({ error: 'Error al generar link de pago' }, { status: 500 });
   }
 }
