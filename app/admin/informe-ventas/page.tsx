@@ -68,12 +68,26 @@ export default function AdminInformeVentasPage() {
     });
   }, [sales, searchQuery]);
 
-  const totals = useMemo(() => {
+const totals = useMemo(() => {
+    // 1. Contamos las ventas por canal
+    const webSales = filteredSales.filter(s => s.source === 'web').length;
+    const botSales = filteredSales.filter(s => s.source === 'techbot').length;
+    const totalCount = filteredSales.length;
+
+    // 2. Calculamos porcentajes seguros (evitando dividir por cero)
+    const webPercentage = totalCount > 0 ? Math.round((webSales / totalCount) * 100) : 0;
+    const botPercentage = totalCount > 0 ? Math.round((botSales / totalCount) * 100) : 0;
+
     return {
       totalSales: filteredSales.reduce((sum, s) => sum + s.total, 0),
       totalTax: filteredSales.reduce((sum, s) => sum + s.tax, 0),
-      count: filteredSales.length,
-      average: filteredSales.length > 0 ? filteredSales.reduce((sum, s) => sum + s.total, 0) / filteredSales.length : 0
+      count: totalCount,
+      average: totalCount > 0 ? filteredSales.reduce((sum, s) => sum + s.total, 0) / totalCount : 0,
+      // 🔥 Agregamos las nuevas métricas para la gráfica
+      webSales,
+      botSales,
+      webPercentage,
+      botPercentage
     };
   }, [filteredSales]);
 
@@ -138,6 +152,53 @@ export default function AdminInformeVentasPage() {
             <p className="text-xs text-gray-500 mt-2">IGV recaudado</p>
           </div>
         </div>
+
+        {/* Gráfica de Rendimiento de Canales (Web vs Bot) */}
+        {totals.count > 0 && (
+          <div className="bg-white rounded-lg p-4 sm:p-6 border border-gray-200 shadow-sm mb-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">Rendimiento por Canal de Venta</h3>
+            
+            <div className="flex items-center justify-between text-sm mb-2">
+              <span className="font-semibold text-blue-700 flex items-center gap-1">
+                🌐 Tienda Web ({totals.webPercentage}%)
+              </span>
+              <span className="font-semibold text-purple-700 flex items-center gap-1">
+                🤖 Chatbot ({totals.botPercentage}%)
+              </span>
+            </div>
+            
+            {/* La barra gráfica creada con Tailwind */}
+            <div className="w-full h-8 bg-gray-100 rounded-full overflow-hidden flex shadow-inner">
+              <div
+                className="bg-blue-500 h-full flex items-center justify-center text-xs text-white font-bold transition-all duration-1000"
+                style={{ width: `${totals.webPercentage}%` }}
+                title={`Ventas Web: ${totals.webSales}`}
+              >
+                {totals.webPercentage > 10 ? `${totals.webSales}` : ''}
+              </div>
+              <div
+                className="bg-purple-500 h-full flex items-center justify-center text-xs text-white font-bold transition-all duration-1000"
+                style={{ width: `${totals.botPercentage}%` }}
+                title={`Ventas Chatbot: ${totals.botSales}`}
+              >
+                {totals.botPercentage > 10 ? `${totals.botSales}` : ''}
+              </div>
+            </div>
+            
+            <div className="flex justify-between text-xs text-gray-500 mt-3">
+              <span>{totals.webSales} transacciones directas</span>
+              <span>{totals.botSales} transacciones asistidas</span>
+            </div>
+          </div>
+        )}
+
+
+
+
+
+
+
+
 
         {/* Search */}
         <div className="bg-white rounded-lg p-3 sm:p-4 border border-gray-200 mb-6 shadow-sm">
