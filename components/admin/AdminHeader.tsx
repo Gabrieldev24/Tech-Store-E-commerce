@@ -61,7 +61,7 @@ export function AdminHeader() {
 
           <div className="flex items-center gap-2 min-w-0">
             <Image 
-              src="/logo.png" 
+              src='/Icono.png' 
               alt="TechStore" 
               width={32} 
               height={32}
