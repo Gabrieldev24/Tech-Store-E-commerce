@@ -25,11 +25,13 @@ const QUICK_OPTIONS = [
 const TypewriterText = ({ 
   content, 
   speed = 12, 
-  onComplete 
+  onComplete,
+  onScroll // 🔥 1. Agregamos esta propiedad
 }: { 
   content: string; 
   speed?: number; 
   onComplete?: () => void; 
+  onScroll?: () => void; // 🔥 Declaramos su tipo
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -39,6 +41,9 @@ const TypewriterText = ({
     const interval = setInterval(() => {
       i++;
       setCurrentIndex(i);
+      
+      onScroll?.(); // 🔥 2. Hacemos que baje el scroll suavemente con cada letra
+      
       if (i >= content.length) {
         clearInterval(interval);
         onComplete?.(); 
@@ -46,14 +51,14 @@ const TypewriterText = ({
     }, speed);
 
     return () => clearInterval(interval);
-  }, [content, speed]);
+  }, [content, speed, onScroll]);
 
   return (
-      <p className="leading-relaxed whitespace-pre-wrap">
-        <span>{content.substring(0, currentIndex)}</span>
-        <span className="opacity-0">{content.substring(currentIndex)}</span>
-      </p>
-    );
+    <p className="leading-relaxed whitespace-pre-wrap">
+      {/* 🔥 3. Eliminamos el span con opacity-0. Ahora sí crecerá naturalmente */}
+      {content.substring(0, currentIndex)}
+    </p>
+  );
 };
 
 // Función para extraer las tarjetas ocultas que manda la IA
@@ -402,6 +407,7 @@ const handleResetChat = () => {
                               <TypewriterText 
                                 content={cleanText} 
                                 onComplete={() => handleTypewriterComplete(msg.id)} 
+                                onScroll={scrollToBottom}
                               />
                             ) : (
                               <p className="leading-relaxed whitespace-pre-wrap">{cleanText}</p>
